@@ -1,9 +1,11 @@
+from fcntl import F_SEAL_SEAL
 import pyaudio
 import wave
 import requests
 import json
 import subprocess
 import os
+import time
 from configure import auth_key
 from datetime import datetime 
 
@@ -47,6 +49,8 @@ wf.setframerate(RATE)
 wf.writeframes(b''.join(frames))
 wf.close()
 
+#Split a large .wav into several .mp3 files, separated by periods of silence
+
 bashCommand = "sox audio_output.wav audio_output_processed_.mp3 silence 1 0.5 1% 1 5.0 1% : newfile : restart"
 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 output, error = process.communicate()
@@ -55,19 +59,19 @@ prefixed = [filename for filename in os.listdir('.') if filename.startswith("aud
     
 for item in prefixed:
     print(item)
-    #for later use
+    #webhook will be implemented in future
     json = {"webhook_url": "https://foo.bar/your-webhook-url"}
     headers = {"authorization": auth_key, "content-type": "application/json"}
 
-    def read_file(filename):
-       with open(filename, 'rb') as _file:
+    def read_file(item):
+       with open(item, 'rb') as _file:
            while True:
                data = _file.read(5242880)
                if not data:
                    break
                yield data
     
-    upload_response = requests.post('https://api.assemblyai.com/v2/upload', headers=headers, data=read_file(prefixed))
+    upload_response = requests.post('https://api.assemblyai.com/v2/upload', headers=headers, data=read_file(item))
     audio_url = upload_response.json()['upload_url']
 
     transcript_request = {'audio_url': audio_url}
@@ -76,6 +80,8 @@ for item in prefixed:
     _id = transcript_response.json()['id']
 
     endpoint = "https://api.assemblyai.com/v2/transcript/" + _id
+    #hacky way to avoid better REST polling for now:
+    time.sleep(45)
     polling_response = requests.get(endpoint, headers=headers)
     if polling_response.json()['status'] != 'completed':
        print(polling_response.json())
