@@ -1,0 +1,4 @@
+configure.py
+*.wav
+*.mp3
+*.venv
