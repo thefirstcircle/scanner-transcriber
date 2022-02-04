@@ -1,4 +1,3 @@
-from fcntl import F_SEAL_SEAL
 import pyaudio
 import wave
 import requests
@@ -15,7 +14,7 @@ FRAMES_PER_BUFFER = 3200
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-RECORD_SECONDS = 60
+RECORD_SECONDS = 15
 WAV_OUTPUT_FILENAME = "audio_output.wav"
 p = pyaudio.PyAudio()
  
@@ -81,7 +80,7 @@ for item in prefixed:
 
     endpoint = "https://api.assemblyai.com/v2/transcript/" + _id
     #hacky way to avoid better REST polling for now:
-    time.sleep(45)
+    time.sleep(20)
     polling_response = requests.get(endpoint, headers=headers)
     if polling_response.json()['status'] != 'completed':
        print(polling_response.json())
@@ -89,3 +88,6 @@ for item in prefixed:
        with open(_id + '.txt', 'w') as f:
            f.write(polling_response.json()['text'])
        print('Transcript saved to', _id, '.txt')
+
+
+
