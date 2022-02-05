@@ -9,12 +9,13 @@ from configure import auth_key
 from datetime import datetime 
 
 DATE = datetime.now().strftime("%Y_%m_%d-%I:%M:%S_%p")
+SCANNERLOG = "scannerlog.md"
 
 FRAMES_PER_BUFFER = 3200
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-RECORD_SECONDS = 15
+RECORD_SECONDS = 120
 WAV_OUTPUT_FILENAME = "audio_output.wav"
 p = pyaudio.PyAudio()
  
@@ -49,8 +50,8 @@ wf.writeframes(b''.join(frames))
 wf.close()
 
 #Split a large .wav into several .mp3 files, separated by periods of silence
-
-bashCommand = "sox audio_output.wav audio_output_processed_.mp3 silence 1 0.5 1% 1 5.0 1% : newfile : restart"
+#"Using SoX’s newfile pseudo-effect allows us to split an audio file based on periods of silence, and then calling restart starts the effects chain over from the beginning. In this example, SoX will split audio when it detects 5 or more seconds of silence.""
+bashCommand = "sox audio_output.wav audio_output_processed_.mp3 silence 1 0.1 1% 1 1.0 1% : newfile : restart"
 process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
 output, error = process.communicate()
 
@@ -80,14 +81,11 @@ for item in prefixed:
 
     endpoint = "https://api.assemblyai.com/v2/transcript/" + _id
     #hacky way to avoid better REST polling for now:
-    time.sleep(20)
+    time.sleep(15)
     polling_response = requests.get(endpoint, headers=headers)
     if polling_response.json()['status'] != 'completed':
        print(polling_response.json())
     else:
-       with open(_id + '.txt', 'w') as f:
-           f.write(polling_response.json()['text'])
-       print('Transcript saved to', _id, '.txt')
-
-
-
+       with open(SCANNERLOG, 'a') as f:
+           f.write('\n*'+DATE+'*\n''> “*'+polling_response.json()['text']+'"*\n\n')
+       print('Transcript saved to scannerlog.') 
