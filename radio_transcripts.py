@@ -15,7 +15,7 @@ FRAMES_PER_BUFFER = 3200
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
-RECORD_SECONDS = 120
+RECORD_SECONDS = 60
 WAV_OUTPUT_FILENAME = "audio_output.wav"
 p = pyaudio.PyAudio()
  
